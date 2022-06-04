@@ -15,7 +15,6 @@ Hernandez Calderon Fernando*/
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <netdb.h>
 
 //Puerto al que nos queremos conectar
 #define ELPUERTO 3490
