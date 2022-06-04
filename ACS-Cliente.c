@@ -15,7 +15,7 @@ Hernandez Calderon Fernando*/
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-
+#include <netdb.h>
 
 // Puerto por el que se conectara el cliente
 #define PORT 3490
