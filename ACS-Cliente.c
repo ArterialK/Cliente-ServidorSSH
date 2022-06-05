@@ -2,7 +2,8 @@
 Objetivo: Crear un Cliente-Servidor que ejecute comandos
 remotamente como ocurre con un cliente-Servidor SSH comercial 
 Cortes Lopez Maricela
-Hernandez Calderon Fernando*/
+Hernandez Calderon Fernando
+Archivo Cliente*/
 
 //Bibliotecas necesarias.
 #include <stdio.h>
@@ -16,6 +17,7 @@ Hernandez Calderon Fernando*/
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <netdb.h>
+
 
 // Puerto por el que se conectara el cliente
 #define PORT 3490
@@ -34,43 +36,70 @@ int main(int argc, char *argv[]){
   
   // Si no se ingresa un segundo argumento
   if(argc != 2){
-    fprintf(stderr, "Client-Usage: %s host_servidor\n", argv[0]);
+    fprintf(stderr, "Client-Usa: %s host_servidor\n", argv[0]);
     exit(1);
   }
 
-  // Obtenemos la informacion del host
+  // Intentamos obtener la informacion del host
   if((he=gethostbyname(argv[1])) == NULL){
     perror("gethostbyname()");
     exit(1);
   }
   else
-    printf("Client-The remote host is: %s\n", argv[1]);
+    printf("Client-El host remoto es: %s\n", argv[1]);
 
+  // Intentamos abrir el socket para iniciar la comunicacion
   if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
     perror("socket()");
     exit(1);
+  } else { 
+    printf("Client-Se logro crear socket...\n");
   }
-  else 
-    printf("Client-The socket() sockfd is OK...\n");
 
+  // Configuramos los detalles de la conexion
   their_addr.sin_family = AF_INET;
   printf("Server-Using %s and port %d...\n", argv[1], PORT);
   their_addr.sin_port = htons(PORT);
   their_addr.sin_addr = *((struct in_addr *)he->h_addr);
 
+  //Ponemos los demas parametros de la estructura en 0
   memset(&(their_addr.sin_zero), '\0', 8);
+
+  //Probamos si podemos conectarnos al servidor
   if(connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1){
     perror("connect()");
     exit(1);
+  } else{
+    printf("Client-Conectado...\n");
   }
-  else
-    printf("Client-The connect() is OK...\n");
+  
+  // Comenzamos a comunicarnos con el servidor
+  while (1) {
+    //Limpiamos el vector buf
+    memset(buf,0,MAXDATASIZE);
 
-  if(send(sockfd, "Paterno Materno Nombre\n", 29, 0) == -1)
-    perror("Server-send() error lol!");
-  else
-    printf("Server-send is OK...!\n");
+    // Escribimos el comando a ejecutar
+  	printf("client> ");
+  	fgets(buf,MAXDATASIZE,stdin);
 
+    //Intentamos enviar el mensaje al servidor
+  	if(send(sockfd, buf, 29, 0) == -1){
+    	perror("Server-send() error lol!");
+  	} else{
+    	printf("Servidor- Recibio %s\n", buf);
+	  }
+
+    //Intentamos recibir la respuesta del servidor
+    if((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1){
+      perror("recv()");
+      exit(1);
+    }else {
+      //Ponemos fin de cadena al mensaje
+      buf[numbytes] = '\0';
+      printf("Servidor- Envia %s\n", buf);  
+    }
+
+  }
 
   printf("Client-Closing sockfd\n");
   close(sockfd);
