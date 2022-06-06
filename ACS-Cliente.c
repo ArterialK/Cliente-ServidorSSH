@@ -3,7 +3,7 @@ Objetivo: Crear un Cliente-Servidor que ejecute comandos
 remotamente como ocurre con un cliente-Servidor SSH comercial 
 Cortes Lopez Maricela
 Hernandez Calderon Fernando
-Archivo Cliente*/
+                                                      Archivo Cliente*/
 
 //Bibliotecas necesarias.
 #include <stdio.h>
@@ -27,7 +27,8 @@ Archivo Cliente*/
 int main(int argc, char *argv[]){
   int sockfd, numbytes;
   // Inicializamos el buffer con el tamaño maximo de bytes
-  char buf[MAXDATASIZE];
+  char bufEnvia[MAXDATASIZE];
+  char bufRecibe[MAXDATASIZE];
   //Estructura para almacenar la informacion del host
   struct hostent *he;
 
@@ -44,9 +45,9 @@ int main(int argc, char *argv[]){
   if((he=gethostbyname(argv[1])) == NULL){
     perror("gethostbyname()");
     exit(1);
-  }
-  else
+  } else {
     printf("Client-El host remoto es: %s\n", argv[1]);
+  }
 
   // Intentamos abrir el socket para iniciar la comunicacion
   if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
@@ -74,32 +75,31 @@ int main(int argc, char *argv[]){
   }
   
   // Comenzamos a comunicarnos con el servidor
-  while (1) {
-    //Limpiamos el vector buf
-    memset(buf,0,MAXDATASIZE);
+  while (strcmp(bufEnvia,"exit\n") != 0) {
+    //Limpiamos el vector bufEnvia y bufRecibe
+    memset(bufEnvia,0,MAXDATASIZE);
+    memset(bufRecibe,0,MAXDATASIZE);
 
     // Escribimos el comando a ejecutar
   	printf("client> ");
-  	fgets(buf,MAXDATASIZE,stdin);
+  	fgets(bufEnvia,MAXDATASIZE,stdin);
 
     //Intentamos enviar el mensaje al servidor
-  	if(send(sockfd, buf, 29, 0) == -1){
+  	if(send(sockfd, bufEnvia, 29, 0) == -1){
     	perror("Server-send() error lol!");
   	} else{
-    	printf("Servidor- Recibio %s\n", buf);
+    	//printf("Servidor- Recibio %s\n", bufEnvia);
 	  }
 
     //Intentamos recibir la respuesta del servidor
-    if((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1){
+    if((numbytes = recv(sockfd, bufRecibe, MAXDATASIZE-1, 0)) == -1){
       perror("recv()");
       exit(1);
     }else {
-      //Ponemos fin de cadena al mensaje
-      buf[numbytes] = '\0';
-      printf("Servidor- Envia %s\n", buf);  
+      Ponemos fin de cadena al mensaje
+      bufRecibe[numbytes] = '\0';
+      printf("Servidor- Envia %s", bufRecibe);  
     }
-
-  }
 
   printf("Client-Closing sockfd\n");
   close(sockfd);
