@@ -2,7 +2,8 @@
 Objetivo: Crear un Cliente-Servidor que ejecute comandos
 remotamente como ocurre con un cliente-Servidor SSH comercial 
 Cortes Lopez Maricela
-Hernandez Calderon Fernando*/
+Hernandez Calderon Fernando
+							Archivo Servidor*/
 
 //Bibliotecas necesarias.
 #include <stdio.h>
@@ -20,7 +21,51 @@ Hernandez Calderon Fernando*/
 #define ELPUERTO 3490
 //Establecemos un maximo de bytes que puede recibir a la vez
 #define MAXDATASIZE 300
-#define BACKLOG 10
+//El tamaño de cola de escucha
+#define BACKLOG 5
+
+int conexion(int new_fd){
+	int numbytes;
+	// buf sera la entrada del usuario
+	char buf[MAXDATASIZE];
+	// salida sera el resultado del comando
+	char salida[MAXDATASIZE];
+	// comando es el apuntador al resultado del shell
+	FILE *comando;
+
+	memset(buf,0,MAXDATASIZE);
+	//Verificamos que el mensaje recibido no tiene algun error
+	if((numbytes = recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1){
+		perror("recv()");
+		exit(1);
+	}
+	
+	// Ponemos fin de cadena al mensaje
+	buf[numbytes] = '\0';
+	printf("Servidor- Recibe: %s \n", buf);
+
+	//Mandamos a llamar al shell para ejecutar el comando
+	fflush(stdout);
+	if((comando = popen(buf,"r")) == NULL ){
+		perror("popen error");
+	}
+
+	// Enviamos resultado al cliente
+	printf("Servidor- Envia: %s", salida);
+ 	send(new_fd, salida, MAXDATASIZE, 0);
+    
+    	// Limpiamos despues de haber enviado resultado
+    	fflush(stdout);
+    	fflush(stdin);
+    	// Enviamos mensaje que termino el resultado
+    	send(new_fd, "termine\n", MAXDATASIZE, 0);
+    	// Cerramos el FILE comando
+	pclose(comando);
+
+	//Cerramos el socket de coneccion con el cliente
+	close(new_fd);
+	printf("Server-new socket, new_fd closed successfully...\n");
+}
 
 int main(int argc, char *argv[ ]){
 	//Variables para la escucha del socket, nuevas conexiones y num de bytes
@@ -30,9 +75,8 @@ int main(int argc, char *argv[ ]){
 	// Informacion de la direccion de los conectores
 	struct sockaddr_in their_addr;
 	int sin_size;
-	//Definimos la capacidad del buffer
-	char buf[MAXDATASIZE];
 	
+
 	//Comprobamos si hay un error con el descriptor de fichero
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		perror("Server-socket() error lol!");
@@ -48,7 +92,7 @@ int main(int argc, char *argv[ ]){
 	//Ponemos en 0 o "null" el resto de la estructura
 	memset(&(my_addr.sin_zero), '\0', 8);
 	printf("El servidor esta en %s Con el puerto %d...\n", inet_ntoa(my_addr.sin_addr), ELPUERTO);
-	
+
 	// Le intentamos asignar al socket sockfd una direccion de socket local
 	if(bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr)) == -1){
 		perror("Server-bind() error");
@@ -56,6 +100,7 @@ int main(int argc, char *argv[ ]){
 	} else{
 		printf("Servidor-Se enlazo correctamente\n");
 	}
+
 
 	//Comprobamos si el servidor puede escuchar el socket
 	if(listen(sockfd, BACKLOG) == -1){
@@ -67,35 +112,22 @@ int main(int argc, char *argv[ ]){
 	
 	// obtenemos el tamaño de la estructura 
 	sin_size = sizeof(struct sockaddr_in);
-	
-	while(1){
-		// Comprobamos si la conexion se realizo correctamente
+
+	// Inicia el servidor
+	//while(1){
+		// Intentamos crear la conexion con el cliente
 		if((new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size)) == -1){
 			perror("Server-accept() error");
 			exit(1);
 		}else{
 			printf("Servidor-Conexion exitosa...\n");
-			//printf("Server-new socket, new_fd is OK...\n");
 			printf("Servidor: Conexion entrante de:  %s\n", inet_ntoa(their_addr.sin_addr));
+			//Funcion de conexion 
+			conexion(new_fd);
 		}
 
-		//Verificamos que el mensaje recibido no tiene algun error
-		if((numbytes = recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1){
-			perror("recv()");
-			exit(1);
-		} else {
-			printf("Servidor-Mensaje recibido ...\n");
-		}
-		
-		//Ponemos fin de cadena al mensaje
-		buf[numbytes] = '\0';
-		printf("Servidor-Received: %s", buf);
-		
-		//Cerramos el 
-		close(new_fd);
-		printf("Server-new socket, new_fd closed successfully...\n");
-	}
-	
+	//}
+
 	//Cerramos el descriptor de archivo de la conexion
 	close(sockfd);
 	return 0;
