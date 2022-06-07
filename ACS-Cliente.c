@@ -45,9 +45,9 @@ int main(int argc, char *argv[]){
   if((he=gethostbyname(argv[1])) == NULL){
     perror("gethostbyname()");
     exit(1);
-  } else {
-    printf("Client-El host remoto es: %s\n", argv[1]);
   }
+  else
+    printf("Client-El host remoto es: %s\n", argv[1]);
 
   // Intentamos abrir el socket para iniciar la comunicacion
   if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
@@ -92,14 +92,29 @@ int main(int argc, char *argv[]){
 	  }
 
     //Intentamos recibir la respuesta del servidor
-    if((numbytes = recv(sockfd, bufRecibe, MAXDATASIZE-1, 0)) == -1){
-      perror("recv()");
-      exit(1);
-    }else {
-      Ponemos fin de cadena al mensaje
-      bufRecibe[numbytes] = '\0';
-      printf("Servidor- Envia %s", bufRecibe);  
-    }
+    //if((numbytes = recv(sockfd, bufRecibe, MAXDATASIZE-1, 0)) == -1){
+    //  perror("recv()");
+    //  exit(1);
+    //}else {
+      //Ponemos fin de cadena al mensaje
+    //  bufRecibe[numbytes] = '\0';
+    //  printf("Servidor- Envia %s", bufRecibe);  
+    //}
+    
+    fflush(stdout);
+    fflush(stdin);
+    while (strcmp(bufRecibe,"termine\n") != 0){
+          if (strlen(bufRecibe) >= 3){
+            printf("%s", bufRecibe);       
+          }
+          
+          fflush(stdout);
+          fflush(stdin);
+          memset(bufRecibe,0,MAXDATASIZE);
+          recv(sockfd, bufRecibe, MAXDATASIZE, 0);
+        }
+        printf("\n");
+  }
 
   printf("Client-Closing sockfd\n");
   close(sockfd);
