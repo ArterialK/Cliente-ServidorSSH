@@ -101,21 +101,26 @@ int main(int argc, char *argv[]){
     //  printf("Servidor- Envia %s", bufRecibe);  
     //}
     
+
+    // Limpiamos la entrada y salida
     fflush(stdout);
     fflush(stdin);
+
+    // Recibimos todos los mensajes del servidor hasta que envie un "termine"
     while (strcmp(bufRecibe,"termine\n") != 0){
           if (strlen(bufRecibe) >= 3){
             printf("%s", bufRecibe);       
           }
-          
+          // Limpiamos la entrada y salida
           fflush(stdout);
           fflush(stdin);
+          // Limpiamos el vector bufRecibe
           memset(bufRecibe,0,MAXDATASIZE);
           recv(sockfd, bufRecibe, MAXDATASIZE, 0);
         }
         printf("\n");
   }
-
+  // Cerramos el socket del cliente
   printf("Client-Closing sockfd\n");
   close(sockfd);
   return 0;
