@@ -3,7 +3,7 @@ Objetivo: Crear un Cliente-Servidor que ejecute comandos
 remotamente como ocurre con un cliente-Servidor SSH comercial 
 Cortes Lopez Maricela
 Hernandez Calderon Fernando
-							Archivo Servidor*/
+Archivo Servidor*/
 
 //Bibliotecas necesarias.
 #include <stdio.h>
@@ -33,38 +33,42 @@ int conexion(int new_fd){
 	// comando es el apuntador al resultado del shell
 	FILE *comando;
 
-	memset(buf,0,MAXDATASIZE);
-	//Verificamos que el mensaje recibido no tiene algun error
-	if((numbytes = recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1){
-		perror("recv()");
-		exit(1);
-	}
-	
-	// Ponemos fin de cadena al mensaje
-	buf[numbytes] = '\0';
-	printf("Servidor- Recibe: %s \n", buf);
+	while( strcmp (buf,"exit\n") != 0){
+			memset(buf,0,MAXDATASIZE);
+			//Verificamos que el mensaje recibido no tiene algun error
+			if((numbytes = recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1){
+				perror("recv()");
+				exit(1);
+			}
+		
+			// Ponemos fin de cadena al mensaje
+			buf[numbytes] = '\0';
+			printf("Servidor- Recibe: %s \n", buf);
 
-	//Mandamos a llamar al shell para ejecutar el comando
-	fflush(stdout);
-	if((comando = popen(buf,"r")) == NULL ){
-		perror("popen error");
-	}
+			//Mandamos a llamar al shell para ejecutar el comando
+			fflush(stdout);
+			if((comando = popen(buf,"r")) == NULL ){
+				perror("popen error");
+			}
 
-	// Enviamos resultado al cliente
-	printf("Servidor- Envia: %s", salida);
- 	send(new_fd, salida, MAXDATASIZE, 0);
-    
-    	// Limpiamos despues de haber enviado resultado
-    	fflush(stdout);
-    	fflush(stdin);
-    	// Enviamos mensaje que termino el resultado
-    	send(new_fd, "termine\n", MAXDATASIZE, 0);
-    	// Cerramos el FILE comando
-	pclose(comando);
+			// Enviamos resultado al cliente
+			while (fgets(salida, MAXDATASIZE, comando) != NULL){
+    			printf("Servidor- Envia: %s", salida);
+    			send(new_fd, salida, MAXDATASIZE, 0);
+    		}
+    		// Limpiamos despues de haber enviado resultado
+    		fflush(stdout);
+    		fflush(stdin);
+    		// Enviamos mensaje que termino el resultado
+    		send(new_fd, "termine\n", MAXDATASIZE, 0);
+    		// Cerramos el FILE comando
+			pclose(comando);
 
-	//Cerramos el socket de coneccion con el cliente
-	close(new_fd);
-	printf("Server-new socket, new_fd closed successfully...\n");
+
+		}
+		//Cerramos el socket de coneccion con el cliente
+		close(new_fd);
+		printf("Server-new socket, new_fd closed successfully...\n");
 }
 
 int main(int argc, char *argv[ ]){
@@ -114,7 +118,7 @@ int main(int argc, char *argv[ ]){
 	sin_size = sizeof(struct sockaddr_in);
 
 	// Inicia el servidor
-	//while(1){
+	while(1){
 		// Intentamos crear la conexion con el cliente
 		if((new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size)) == -1){
 			perror("Server-accept() error");
@@ -126,7 +130,7 @@ int main(int argc, char *argv[ ]){
 			conexion(new_fd);
 		}
 
-	//}
+	}
 
 	//Cerramos el descriptor de archivo de la conexion
 	close(sockfd);
