@@ -59,7 +59,7 @@ int main(int argc, char *argv[]){
 
   // Configuramos los detalles de la conexion
   their_addr.sin_family = AF_INET;
-  printf("Server-Using %s and port %d...\n", argv[1], PORT);
+  printf("Server-Usando %s con el puerto %d...\n", argv[1], PORT);
   their_addr.sin_port = htons(PORT);
   their_addr.sin_addr = *((struct in_addr *)he->h_addr);
 
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]){
   	fgets(bufEnvia,MAXDATASIZE,stdin);
 
     //Intentamos enviar el mensaje al servidor
-  	if(send(sockfd, bufEnvia, 29, 0) == -1){
+  	if(send(sockfd, bufEnvia, MAXDATASIZE, 0) == -1){
     	perror("Server-send() error lol!");
   	} else{
     	//printf("Servidor- Recibio %s\n", bufEnvia);
