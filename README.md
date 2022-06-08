@@ -11,3 +11,7 @@ en lugar de la del cliente.
 
 Una vez terminada la conexion con el cliente por medio de la palabra "exit" el servidor
 se mantendra a la escucha de un nuevo cliente.
+
+-- Version Mejorada 
+
+Se agrego la capacidad de devolver al usuario una respuesta si el comando no fue encontrado
