@@ -16,6 +16,7 @@ Archivo Servidor*/
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 //Puerto al que nos queremos conectar
 #define ELPUERTO 3490
@@ -23,6 +24,9 @@ Archivo Servidor*/
 #define MAXDATASIZE 300
 //El tamaño de cola de escucha
 #define BACKLOG 5
+
+//Variable global para cerrar el servidor al terminar
+int flag = 0;
 
 int conexion(int new_fd){
 	int numbytes;
@@ -66,9 +70,18 @@ int conexion(int new_fd){
 
 
 		}
+		send(new_fd, "Conexion cerrada\n", MAXDATASIZE, 0);
 		//Cerramos el socket de coneccion con el cliente
 		close(new_fd);
 		printf("Server-new socket, new_fd closed successfully...\n");
+}
+
+void manejador_senales(int sig){
+  if( sig == SIGINT ){
+  		printf("\nCerrando servidor, adios\n");
+  		close(flag);
+  		exit(1);
+  }
 }
 
 int main(int argc, char *argv[ ]){
@@ -117,6 +130,12 @@ int main(int argc, char *argv[ ]){
 	// obtenemos el tamaño de la estructura 
 	sin_size = sizeof(struct sockaddr_in);
 
+	if (signal(SIGINT,manejador_senales) == SIG_ERR){
+		printf("no puedo cachar SIGINT\n");
+    	perror("signal");
+	}
+
+	flag = sockfd;
 	// Inicia el servidor
 	while(1){
 		// Intentamos crear la conexion con el cliente
@@ -129,9 +148,8 @@ int main(int argc, char *argv[ ]){
 			//Funcion de conexion 
 			conexion(new_fd);
 		}
-
 	}
-
+	printf("Cerrando servidor, adios\n");
 	//Cerramos el descriptor de archivo de la conexion
 	close(sockfd);
 	return 0;
