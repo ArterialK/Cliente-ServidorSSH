@@ -3,7 +3,7 @@ Objetivo: Crear un Cliente-Servidor que ejecute comandos
 remotamente como ocurre con un cliente-Servidor SSH comercial 
 Cortes Lopez Maricela
 Hernandez Calderon Fernando
-Archivo Servidor*/
+								Archivo Servidor*/
 
 //Bibliotecas necesarias.
 #include <stdio.h>
@@ -40,7 +40,7 @@ int conexion(int new_fd){
 	while( strcmp (buf,"exit\n") != 0){
 			memset(buf,0,MAXDATASIZE);
 			//Verificamos que el mensaje recibido no tiene algun error
-			if((numbytes = recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1){
+			if((numbytes = recv(new_fd, buf, MAXDATASIZE, 0)) == -1){
 				perror("recv()");
 				exit(1);
 			}
@@ -49,25 +49,29 @@ int conexion(int new_fd){
 			buf[numbytes] = '\0';
 			printf("Servidor- Recibe: %s \n", buf);
 
-			//Mandamos a llamar al shell para ejecutar el comando
-			fflush(stdout);
-			if((comando = popen(buf,"r")) == NULL ){
-				perror("popen error");
+			if(system(buf)!=0){
+				send(new_fd,"Comando desconocido\n", MAXDATASIZE, 0);
+				send(new_fd, "termine\n", MAXDATASIZE, 0);
+			}else{
+				//Mandamos a llamar al shell para ejecutar el comando
+				fflush(stdout);
+				if((comando = popen(buf,"r")) == NULL ){
+					perror("popen error");
+				}
+
+				// Enviamos resultado al cliente
+				while (fgets(salida, MAXDATASIZE, comando) != NULL){
+    				printf("Servidor- Envia: %s", salida);
+	    			send(new_fd, salida, MAXDATASIZE, 0);
+  	  		}
+    			// Limpiamos despues de haber enviado resultado
+    			fflush(stdout);
+    			fflush(stdin);
+    			// Enviamos mensaje que termino el resultado
+    			send(new_fd, "termine\n", MAXDATASIZE, 0);
+    			// Cerramos el FILE comando
+				pclose(comando);
 			}
-
-			// Enviamos resultado al cliente
-			while (fgets(salida, MAXDATASIZE, comando) != NULL){
-    			printf("Servidor- Envia: %s", salida);
-    			send(new_fd, salida, MAXDATASIZE, 0);
-    		}
-    		// Limpiamos despues de haber enviado resultado
-    		fflush(stdout);
-    		fflush(stdin);
-    		// Enviamos mensaje que termino el resultado
-    		send(new_fd, "termine\n", MAXDATASIZE, 0);
-    		// Cerramos el FILE comando
-			pclose(comando);
-
 
 		}
 		send(new_fd, "Conexion cerrada\n", MAXDATASIZE, 0);
